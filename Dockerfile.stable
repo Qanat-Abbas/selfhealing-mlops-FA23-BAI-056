@@ -1,0 +1,7 @@
+FROM python:3.10-slim
+WORKDIR /app
+RUN apt-get update && apt-get install -y gcc && rm -rf /var/lib/apt/lists/*
+COPY stable-fallback/app.py app.py
+RUN pip install --no-cache-dir flask==3.0.3 requests==2.32.3
+EXPOSE 5000
+CMD ["python", "app.py"]

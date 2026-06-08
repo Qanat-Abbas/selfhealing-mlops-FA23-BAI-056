@@ -16,7 +16,7 @@ CONFIDENCE_GAUGE = Gauge(
 )
 
 # Poll the app running via Minikube NodePort
-APP_URL = "http://localhost:32500/api/latest-confidence"
+APP_URL = "http://192.168.49.2:32500/api/latest-confidence"
 POLL_INTERVAL = 5  # seconds
 DEFAULT_CONFIDENCE = 1.0
 
