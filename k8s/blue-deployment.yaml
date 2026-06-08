@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sentiment-blue-deployment
+  labels:
+    app: sentiment-api
+    slot: blue
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sentiment-api
+      slot: blue
+  template:
+    metadata:
+      labels:
+        app: sentiment-api
+        slot: blue
+    spec:
+      containers:
+        - name: sentiment-api
+          image: qanatabbas/sentiment-api:unstable
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5000
+          volumeMounts:
+            - name: logs-volume
+              mountPath: /app/logs
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 60
+            periodSeconds: 15
+      volumes:
+        - name: logs-volume
+          persistentVolumeClaim:
+            claimName: sentiment-logs-pvc

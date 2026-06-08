@@ -1,0 +1,70 @@
+pipeline {
+    agent any
+
+    environment {
+        KUBECONFIG = "/var/lib/jenkins/.kube/config"
+    }
+
+    triggers {
+        GenericTrigger(
+            genericVariables: [],
+            causeString: 'Triggered by Alertmanager — ModelConfidenceDrift detected',
+            token: 'ROLLBACK_11F98E_TOKEN',
+            printContributedVariables: true,
+            printPostContent: true
+        )
+    }
+
+    stages {
+
+        stage('Acknowledge Alert') {
+            steps {
+                echo 'ALERT RECEIVED: ModelConfidenceDrift — confidence below 0.673 for >1 minute'
+                echo 'Initiating automatic rollback to stable green slot...'
+            }
+        }
+
+        stage('Switch Traffic to Green') {
+            steps {
+                sh '''
+                    # Patch the service selector to point to green slot
+                    kubectl patch service sentiment-service \
+                        -p '{"spec":{"selector":{"app":"sentiment-api","slot":"green"}}}'
+
+                    echo "Service selector patched to slot: green"
+                    kubectl get service sentiment-service -o jsonpath='{.spec.selector}'
+                    echo ""
+                '''
+            }
+        }
+
+        stage('Verify Green Slot') {
+            steps {
+                sh '''
+                    kubectl rollout status deployment/sentiment-green-deployment --timeout=60s
+                    kubectl get pods -l slot=green
+                    echo "Green slot is now serving traffic."
+                '''
+            }
+        }
+
+        stage('Log Rollback Event') {
+            steps {
+                sh '''
+                    echo "[$(date)] ROLLBACK EXECUTED: switched from blue to green slot" \
+                        >> /var/lib/jenkins/rollback.log
+                    cat /var/lib/jenkins/rollback.log
+                '''
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Rollback successful. Stable model (stable-v0-C709) is now live.'
+        }
+        failure {
+            echo 'Rollback FAILED. Manual intervention required.'
+        }
+    }
+}

@@ -11,9 +11,9 @@ route:
 receivers:
   - name: 'jenkins-rollback-webhook'
     webhook_configs:
-      - url: 'http://<EC2-PUBLIC-IP>:8080/generic-webhook-trigger/invoke?token=ROLLBACK_11F98E_TOKEN'
+      - url: 'http://172.31.95.212:8080/generic-webhook-trigger/invoke?token=ROLLBACK_11F98E_TOKEN'
         http_config:
           basic_auth:
-            username: '<JENKINS-USERNAME>'
-            password: '<JENKINS-API-TOKEN>'
+            username: 'admin'
+            password: '113a140b62b47191422f2303c3461cf222'
         send_resolved: false
