@@ -30,8 +30,13 @@ pipeline {
 
         stage('Run Tests') {
             steps {
-                echo 'Stage 3: Running PyTest API tests...'
+                echo 'Stage 3: Running PyTest API tests against Minikube...'
                 sh '''
+                    # Ensure service points to blue slot before testing
+                    kubectl patch service sentiment-service \
+                        -p '{"spec":{"selector":{"app":"sentiment-api","slot":"blue"}}}'
+                    sleep 3
+
                     . venv/bin/activate
                     pytest tests/test_api.py -v --tb=short
                 '''
@@ -80,10 +85,15 @@ pipeline {
                     kubectl apply -f k8s/green-deployment.yaml
                     kubectl apply -f k8s/service.yaml
 
+                    # Ensure traffic goes to blue after deploy
+                    kubectl patch service sentiment-service \
+                        -p '{"spec":{"selector":{"app":"sentiment-api","slot":"blue"}}}'
+
                     # Wait for blue deployment to be ready
                     kubectl rollout status deployment/sentiment-blue-deployment --timeout=120s
 
-                    echo "Blue slot is live. Service pointing to: blue"
+                    echo "=== Blue slot is live ==="
+                    kubectl get pods
                     kubectl get service sentiment-service
                 '''
             }
