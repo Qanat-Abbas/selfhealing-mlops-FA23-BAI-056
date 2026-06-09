@@ -16,44 +16,18 @@ pipeline {
     }
 
     stages {
-
-        stage('Acknowledge Alert') {
+        stage('Switch Traffic to Stable (Green)') {
             steps {
-                echo 'ALERT RECEIVED: ModelConfidenceDrift — confidence below 0.673 for >1 minute'
-                echo 'Initiating automatic rollback to stable green slot...'
-            }
-        }
-
-        stage('Switch Traffic to Green') {
-            steps {
+                echo 'ALERT RECEIVED: ModelConfidenceDrift — switching to green slot...'
                 sh '''
-                    # Patch the service selector to point to green slot
-                    kubectl patch service sentiment-service \
+                    kubectl patch service sentiment-api-service \
                         -p '{"spec":{"selector":{"app":"sentiment-api","slot":"green"}}}'
-
                     echo "Service selector patched to slot: green"
-                    kubectl get service sentiment-service -o jsonpath='{.spec.selector}'
+                    kubectl get service sentiment-api-service -o jsonpath='{.spec.selector}'
                     echo ""
-                '''
-            }
-        }
-
-        stage('Verify Green Slot') {
-            steps {
-                sh '''
                     kubectl rollout status deployment/sentiment-green-deployment --timeout=60s
                     kubectl get pods -l slot=green
-                    echo "Green slot is now serving traffic."
-                '''
-            }
-        }
-
-        stage('Log Rollback Event') {
-            steps {
-                sh '''
-                    echo "[$(date)] ROLLBACK EXECUTED: switched from blue to green slot" \
-                        >> /var/lib/jenkins/rollback.log
-                    cat /var/lib/jenkins/rollback.log
+                    echo "[$(date)] ROLLBACK EXECUTED: switched to green slot" >> /var/lib/jenkins/rollback.log
                 '''
             }
         }

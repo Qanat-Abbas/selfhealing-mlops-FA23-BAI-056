@@ -6,7 +6,7 @@ metadata:
     app: sentiment-api
     slot: blue
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: sentiment-api
